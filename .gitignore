@@ -1,0 +1,111 @@
+# NeuroCardiac Shield - Git Ignore File
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Virtual Environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ML Models and Checkpoints
+ml/checkpoints/
+ml/data/
+*.h5
+*.keras
+*.pkl
+*.json
+*.pb
+
+# Compiled Firmware
+firmware/neurocardiac_fw
+firmware/*.o
+firmware/*.out
+
+# Data Files
+*.bin
+*.dat
+/tmp/neurocardiac_ble_data.bin
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Documentation Build
+docs/_build/
+docs/.doctrees/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary Files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Secrets
+*.key
+*.pem
+credentials.json
+secrets.yaml

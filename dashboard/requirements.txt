@@ -1,0 +1,20 @@
+# NeuroCardiac Shield - Dashboard Dependencies
+# Python 3.10+
+
+# Dashboard Framework
+streamlit==1.29.0
+
+# Visualization
+plotly==5.18.0
+matplotlib==3.8.2
+
+# Data Processing
+numpy==1.24.3
+pandas==2.0.3
+
+# API Communication
+requests==2.31.0
+websocket-client==1.7.0
+
+# Utilities
+python-dateutil==2.8.2

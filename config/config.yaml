@@ -1,0 +1,191 @@
+# NeuroCardiac Shield - System Configuration
+# Version: 1.0.0
+
+# System Information
+system:
+  name: "NeuroCardiac Shield"
+  version: "1.0.0"
+  institution: "New York University"
+  compliance: "IEC 62304 Class B"
+
+# Firmware Configuration
+firmware:
+  sample_rate_hz: 250
+  packet_rate_hz: 10
+  eeg_channels: 8
+  ecg_leads: 3
+
+  # Channel mappings (10-20 system)
+  eeg_channel_names:
+    - "Fp1"  # Frontal pole left
+    - "Fp2"  # Frontal pole right
+    - "C3"   # Central left
+    - "C4"   # Central right
+    - "T3"   # Temporal left
+    - "T4"   # Temporal right
+    - "O1"   # Occipital left
+    - "O2"   # Occipital right
+
+  ecg_lead_names:
+    - "Lead I"
+    - "Lead II"
+    - "Lead III"
+
+# Signal Processing Configuration
+signal_processing:
+  # EEG filtering
+  eeg:
+    lowcut_hz: 0.5
+    highcut_hz: 50.0
+    notch_freq_hz: 60  # 60 Hz for US, 50 Hz for EU
+    filter_order: 4
+
+  # ECG filtering
+  ecg:
+    lowcut_hz: 0.5
+    highcut_hz: 40.0
+    filter_order: 4
+
+  # Frequency bands
+  frequency_bands:
+    delta: [0.5, 4.0]
+    theta: [4.0, 8.0]
+    alpha: [8.0, 13.0]
+    beta: [13.0, 30.0]
+    gamma: [30.0, 100.0]
+
+# Cloud Backend Configuration
+cloud:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+
+  # API endpoints
+  api:
+    base_url: "http://localhost:8000"
+    version: "v1"
+    prefix: "/api"
+
+  # WebSocket configuration
+  websocket:
+    url: "ws://localhost:8000/ws/stream"
+    max_connections: 500
+
+  # Data retention (TODO: implement)
+  storage:
+    type: "timescaledb"  # or "influxdb", "postgresql"
+    retention_days: 90
+    compression: true
+
+# Machine Learning Configuration
+ml:
+  # XGBoost parameters
+  xgboost:
+    max_depth: 6
+    learning_rate: 0.05
+    n_estimators: 200
+    objective: "multi:softprob"
+    num_class: 3
+
+  # LSTM parameters
+  lstm:
+    sequence_length: 250  # 1 second
+    lstm_units_1: 128
+    lstm_units_2: 64
+    dropout_rate: 0.3
+    batch_size: 32
+    epochs: 50
+    learning_rate: 0.001
+
+  # Ensemble weights
+  ensemble:
+    xgboost_weight: 0.6
+    lstm_weight: 0.4
+
+  # Risk thresholds
+  risk_thresholds:
+    low: [0.0, 0.4]
+    medium: [0.4, 0.7]
+    high: [0.7, 1.0]
+
+# Dashboard Configuration
+dashboard:
+  host: "localhost"
+  port: 8501
+  theme: "dark"
+
+  # Visualization settings
+  visualization:
+    eeg_amplitude_range_uv: [-100, 100]
+    ecg_amplitude_range_mv: [-0.5, 2.0]
+    default_time_window_sec: 5
+    refresh_rate_sec: 2
+
+  # Color scheme
+  colors:
+    risk_low: "#28a745"
+    risk_medium: "#ffc107"
+    risk_high: "#dc3545"
+    eeg: "#3498db"
+    ecg: "#e74c3c"
+
+# Security Configuration (TODO: implement)
+security:
+  enable_tls: false  # Set true in production
+  tls_cert_path: "/path/to/cert.pem"
+  tls_key_path: "/path/to/key.pem"
+
+  # Authentication
+  enable_auth: false  # Set true in production
+  auth_method: "jwt"  # or "oauth2"
+  token_expiry_hours: 24
+
+  # Encryption
+  enable_encryption_at_rest: false
+  encryption_algorithm: "AES-256"
+
+# Monitoring & Logging (TODO: implement)
+monitoring:
+  enable_metrics: false
+  metrics_port: 9090
+
+  logging:
+    level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+    format: "json"
+    output: "stdout"  # or "file"
+    log_file_path: "logs/neurocardiac.log"
+
+# Database Configuration (TODO: implement)
+database:
+  type: "postgresql"
+  host: "localhost"
+  port: 5432
+  database: "neurocardiac"
+  user: "neurocardiac_user"
+  password: "CHANGE_ME"  # Use environment variable in production
+
+  # TimescaleDB extension
+  enable_timescale: true
+  chunk_time_interval: "1 day"
+
+# Feature Flags
+features:
+  enable_websocket_streaming: true
+  enable_ml_inference: true
+  enable_real_time_alerts: false  # TODO
+  enable_multi_device_monitoring: false  # TODO
+
+# Development Settings
+development:
+  debug_mode: true
+  hot_reload: true
+  mock_data_enabled: true
+
+# Production Settings (override in production)
+production:
+  debug_mode: false
+  hot_reload: false
+  mock_data_enabled: false
+  workers: 16
+  enable_tls: true
+  enable_auth: true
