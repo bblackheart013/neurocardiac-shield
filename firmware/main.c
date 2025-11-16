@@ -96,7 +96,7 @@ static uint16_t calculate_crc16(const uint8_t *data, size_t length) {
 static void system_init(void) {
     printf("[FIRMWARE] NeuroCardiac Shield - Initializing...\n");
 
-    // TODO: In production, initialize STM32 HAL, clocks, GPIOs
+    // In production, initialize STM32 HAL, clocks, GPIOs
     // HAL_Init();
     // SystemClock_Config();
     // MX_GPIO_Init();
@@ -131,7 +131,7 @@ int main(void) {
         memset(&packet, 0, sizeof(packet));
         packet.timestamp_ms = timestamp_ms;
         packet.packet_id = packet_counter++;
-        packet.device_id = 0x01;  // TODO: Read from EEPROM/flash
+        packet.device_id = 0x01;  // Device ID (read from EEPROM/flash in production)
         packet.status_flags = 0x0F;  // All sensors valid
 
         // Acquire signal samples for this packet window
@@ -152,7 +152,7 @@ int main(void) {
             packet.ecg_data[2][sample_idx] = (int16_t)(ecg_sample * 0.9f * 1000.0f);  // Lead III
 
             // Simulate ADC timing (1/250 Hz = 4 ms per sample)
-            usleep(4000);  // TODO: Replace with hardware timer interrupt
+            usleep(4000);  // Hardware timer interrupt in production
         }
 
         // Acquire ancillary vitals (lower sampling rate, averaged over packet window)

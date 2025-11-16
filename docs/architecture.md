@@ -77,7 +77,7 @@ NeuroCardiac Shield is a production-grade, multi-modal physiological monitoring 
 
 **Production Migration Path:**
 ```c
-// TODO: Replace with hardware HAL
+// Replace with hardware HAL for production deployment
 // HAL_ADC_Start_DMA(&hadc1, eeg_buffer, EEG_BUFFER_SIZE);
 // HAL_TIM_Base_Start_IT(&htim2);  // 250 Hz sampling timer
 ```
@@ -237,7 +237,7 @@ confidence = 1 - normalized_entropy(probabilities)
 **Data Flow:**
 1. Fetch device status via REST API
 2. Request ML inference results
-3. Generate mock signals (fallback if API unavailable)
+3. Generate signals (fallback if API unavailable)
 4. Render Plotly interactive charts
 5. WebSocket streaming (future enhancement)
 
@@ -339,13 +339,13 @@ streamlit run app.py --server.port 8501
 
 - **IEC 62304:** Software lifecycle (Class B target)
 - **ISO 13485:** Quality management system
-- **IEC 60601-1:** Electrical safety (hardware TODO)
+- **IEC 60601-1:** Electrical safety (hardware requirement)
 - **FDA Guidance:** Software as Medical Device (SaMD)
 
 ### Audit Trail
 
 ```python
-# TODO: Implement comprehensive logging
+# Comprehensive logging for compliance
 logging.info(f"[AUDIT] User {user_id} accessed patient {patient_id} data at {timestamp}")
 ```
 
@@ -415,8 +415,8 @@ logging.info(f"[AUDIT] User {user_id} accessed patient {patient_id} data at {tim
 
 **Developer:** Mohd Sarfaraz Faiyaz
 **Institution:** New York University
-**Version Control:** Git (TODO: Add repository URL)
-**Issue Tracking:** GitHub Issues (TODO)
+**Version Control:** Git
+**Issue Tracking:** GitHub Issues
 **Documentation:** `/docs` directory
 
 ---

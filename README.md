@@ -66,8 +66,8 @@ logs/               Runtime logs
 
 Clone the repository:
 ```bash
-git clone <repository-url>
-cd NeuroCardiac-Shield
+git clone https://github.com/bblackheart013/neurocardiac-shield.git
+cd neurocardiac-shield
 ```
 
 Run the setup script:

@@ -28,7 +28,7 @@ static unsigned long packets_sent = 0;
  * @brief Initialize BLE subsystem
  */
 void ble_stub_init(void) {
-    // TODO: In production, initialize BLE stack
+    // In production, initialize BLE stack:
     // - Set device name: "NeuroCardiac_Shield_XXXX"
     // - Configure GATT services and characteristics
     // - Set advertising parameters
@@ -53,7 +53,7 @@ void ble_stub_transmit(const unsigned char *data, size_t len) {
         fprintf(stderr, "[BLE_STUB] WARNING: Packet size %zu exceeds MTU %d\n", len, BLE_MTU_SIZE);
     }
 
-    // TODO: In production, use BLE GATT notification/indication
+    // In production, use BLE GATT notification/indication:
     // ble_gatts_hvx(conn_handle, &hvx_params);
 
     // Simulation: write to binary file for cloud ingestion
