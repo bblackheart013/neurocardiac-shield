@@ -50,8 +50,14 @@ ml/data/
 *.h5
 *.keras
 *.pkl
-*.json
 *.pb
+# Ignore ML data JSON but allow package.json, tsconfig.json, etc.
+ml/**/*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!**/package.json
+!**/tsconfig.json
 
 # Compiled Firmware
 firmware/neurocardiac_fw
