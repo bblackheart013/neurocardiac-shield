@@ -113,7 +113,13 @@ We built a complete end-to-end system from **embedded firmware** to **machine le
 
 ## 🚀 Live Demo
 
-### [**→ Launch NeuroCardiac Shield**](https://neurocardiac-shield.vercel.app)
+### [**→ Launch NeuroCardiac Shield**](https://neurocardiac-shield.netlify.app)
+
+<p align="center">
+  <a href="https://neurocardiac-shield.netlify.app">
+    <img src="https://img.shields.io/badge/🌐_Live_Demo-neurocardiac--shield.netlify.app-00C7B7?style=for-the-badge&logo=netlify&logoColor=white" alt="Live Demo"/>
+  </a>
+</p>
 
 <details>
 <summary><strong>📸 Screenshots</strong></summary>
