@@ -31,6 +31,14 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
 }
 
 ::selection {

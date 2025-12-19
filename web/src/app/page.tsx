@@ -416,7 +416,7 @@ function Section({ id, children, className = '', dark = false }: {
   return (
     <section
       id={id}
-      className={`py-20 px-6 ${dark ? 'bg-nc-bg-secondary' : ''} ${className}`}
+      className={`py-12 md:py-20 px-4 md:px-6 ${dark ? 'bg-nc-bg-secondary' : ''} ${className}`}
     >
       <div className="max-w-6xl mx-auto">
         {children}
@@ -431,11 +431,11 @@ function SectionHeader({ label, title, description }: { label: string, title: st
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="mb-12"
+      className="mb-8 md:mb-12"
     >
-      <span className="font-mono text-nc-accent text-sm">{label}</span>
-      <h2 className="text-4xl font-light mt-2 mb-4">{title}</h2>
-      <p className="text-white/60 max-w-3xl text-lg leading-relaxed">{description}</p>
+      <span className="font-mono text-nc-accent text-xs md:text-sm">{label}</span>
+      <h2 className="text-2xl md:text-4xl font-light mt-2 mb-3 md:mb-4">{title}</h2>
+      <p className="text-white/60 max-w-3xl text-base md:text-lg leading-relaxed">{description}</p>
     </motion.div>
   )
 }
@@ -463,6 +463,7 @@ function InfoCard({ icon: Icon, title, children, color = 'nc-accent' }: {
 function Navigation() {
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState('')
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const sections = [
     { id: 'problem', label: 'Problem' },
@@ -501,20 +502,22 @@ function Navigation() {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled ? 'bg-nc-bg/95 backdrop-blur-lg border-b border-white/5' : ''
     }`}>
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 font-mono text-sm border border-nc-accent px-3 py-1.5 rounded">
-            <Brain className="w-4 h-4 text-nc-eeg" />
-            <Heart className="w-4 h-4 text-nc-ecg" />
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1.5 md:gap-2 font-mono text-xs md:text-sm border border-nc-accent px-2 md:px-3 py-1 md:py-1.5 rounded">
+            <Brain className="w-3 h-3 md:w-4 md:h-4 text-nc-eeg" />
+            <Heart className="w-3 h-3 md:w-4 md:h-4 text-nc-ecg" />
           </div>
-          <span className="text-sm font-medium hidden sm:block">NeuroCardiac Shield</span>
+          <span className="text-xs md:text-sm font-medium hidden sm:block">NeuroCardiac Shield</span>
         </div>
-        <div className="flex items-center gap-1">
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-1">
           {sections.map(section => (
             <a
               key={section.id}
               href={`#${section.id}`}
-              className={`text-xs px-3 py-2 rounded transition-colors hidden md:block ${
+              className={`text-xs px-3 py-2 rounded transition-colors ${
                 (section as any).highlight
                   ? 'bg-nc-ecg/20 text-nc-ecg hover:bg-nc-ecg/30 font-medium'
                   : activeSection === section.id
@@ -533,10 +536,52 @@ function Navigation() {
             className="flex items-center gap-2 text-sm px-4 py-2 bg-nc-accent/20 border border-nc-accent/50 rounded-lg hover:bg-nc-accent/30 transition-colors ml-4"
           >
             <Github className="w-4 h-4" />
-            <span className="hidden sm:inline">GitHub</span>
+            <span>GitHub</span>
           </a>
         </div>
+
+        {/* Mobile Menu Button */}
+        <div className="flex md:hidden items-center gap-2">
+          <a
+            href="https://github.com/bblackheart013/neurocardiac-shield"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center p-2 bg-nc-accent/20 border border-nc-accent/50 rounded-lg"
+          >
+            <Github className="w-4 h-4" />
+          </a>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 text-white/70 hover:text-white"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Layers className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-nc-bg/95 backdrop-blur-lg border-b border-white/5 px-4 pb-4">
+          <div className="grid grid-cols-3 gap-2">
+            {sections.map(section => (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-xs px-2 py-2 rounded text-center transition-colors ${
+                  (section as any).highlight
+                    ? 'bg-nc-ecg/20 text-nc-ecg font-medium'
+                    : activeSection === section.id
+                    ? 'bg-nc-accent/20 text-nc-accent font-medium'
+                    : 'text-white/50 hover:text-white bg-white/5'
+                }`}
+              >
+                {section.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </nav>
   )
 }
@@ -547,13 +592,13 @@ function Navigation() {
 
 function Hero() {
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6 pt-20">
+    <section className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-4 md:px-6 pt-16 md:pt-20">
       <div className="absolute inset-0 bg-gradient-to-b from-nc-accent/5 via-transparent to-transparent" />
 
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-nc-eeg/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-nc-ecg/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/4 left-1/4 w-48 md:w-96 h-48 md:h-96 bg-nc-eeg/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-48 md:w-96 h-48 md:h-96 bg-nc-ecg/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
 
       <motion.div
@@ -566,32 +611,32 @@ function Hero() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
-          className="inline-flex items-center gap-3 font-mono text-xs border border-white/20 px-4 py-2 rounded-full mb-8 bg-white/5"
+          className="inline-flex items-center gap-2 md:gap-3 font-mono text-[10px] md:text-xs border border-white/20 px-3 md:px-4 py-2 rounded-full mb-6 md:mb-8 bg-white/5"
         >
-          <Award className="w-4 h-4 text-nc-accent" />
-          <span className="text-white/60">NYU TANDON · ECE-GY 9953 · FALL 2025 · ADVANCED PROJECT</span>
+          <Award className="w-3 h-3 md:w-4 md:h-4 text-nc-accent" />
+          <span className="text-white/60">NYU TANDON · ECE-GY 9953 · FALL 2025</span>
         </motion.div>
 
-        <h1 className="text-5xl md:text-7xl font-light tracking-tight mb-6">
+        <h1 className="text-4xl md:text-7xl font-light tracking-tight mb-4 md:mb-6">
           <span className="block text-white/90">NeuroCardiac</span>
           <span className="block bg-gradient-to-r from-nc-eeg via-nc-accent to-nc-ecg bg-clip-text text-transparent font-medium">
             Shield
           </span>
         </h1>
 
-        <p className="text-xl md:text-2xl text-white/50 max-w-3xl mx-auto mb-6 leading-relaxed">
+        <p className="text-base md:text-2xl text-white/50 max-w-3xl mx-auto mb-4 md:mb-6 leading-relaxed px-2">
           A complete multi-modal physiological monitoring platform that integrates
           brain and heart signals for real-time health risk assessment
         </p>
 
-        <p className="text-lg text-white/70 max-w-2xl mx-auto mb-12">
+        <p className="text-sm md:text-lg text-white/70 max-w-2xl mx-auto mb-8 md:mb-12 px-2">
           We built an end-to-end system from <span className="text-nc-ecg">embedded firmware</span> to{' '}
           <span className="text-nc-eeg">machine learning</span> to demonstrate how next-generation
           wearable medical devices could detect cardiovascular-neurological risks before they become emergencies.
         </p>
 
         {/* Key Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 max-w-4xl mx-auto mb-8 md:mb-12">
           {[
             { value: '11', label: 'Signal Channels', sublabel: '8 EEG + 3 ECG', color: 'nc-accent' },
             { value: '76', label: 'ML Features', sublabel: 'Hand-crafted', color: 'nc-eeg' },
@@ -603,29 +648,29 @@ function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 + i * 0.1 }}
-              className="glass-card p-4 text-center"
+              className="glass-card p-3 md:p-4 text-center"
             >
-              <div className={`font-mono text-3xl text-${stat.color} mb-1`}>{stat.value}</div>
-              <div className="text-sm text-white/80">{stat.label}</div>
-              <div className="text-xs text-white/40">{stat.sublabel}</div>
+              <div className={`font-mono text-2xl md:text-3xl text-${stat.color} mb-1`}>{stat.value}</div>
+              <div className="text-xs md:text-sm text-white/80">{stat.label}</div>
+              <div className="text-[10px] md:text-xs text-white/40">{stat.sublabel}</div>
             </motion.div>
           ))}
         </div>
 
         {/* Team */}
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex items-center gap-8">
+        <div className="flex flex-col items-center gap-3 md:gap-4">
+          <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
             <div className="text-center">
-              <div className="font-medium text-white/90">Mohd Sarfaraz Faiyaz</div>
+              <div className="font-medium text-white/90 text-sm md:text-base">Mohd Sarfaraz Faiyaz</div>
               <div className="text-xs text-white/40">Systems & ML</div>
             </div>
-            <div className="w-px h-8 bg-white/20" />
+            <div className="hidden md:block w-px h-8 bg-white/20" />
             <div className="text-center">
-              <div className="font-medium text-white/90">Vaibhav D. Chandgir</div>
+              <div className="font-medium text-white/90 text-sm md:text-base">Vaibhav D. Chandgir</div>
               <div className="text-xs text-white/40">Signal Processing</div>
             </div>
           </div>
-          <div className="text-sm text-white/40">
+          <div className="text-xs md:text-sm text-white/40">
             Advisor: <span className="text-white/60">Dr. Matthew Campisi</span>
           </div>
         </div>
@@ -636,10 +681,10 @@ function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.5 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer hover:text-nc-accent transition-colors"
+        className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer hover:text-nc-accent transition-colors"
       >
-        <span className="text-xs text-white/40 uppercase tracking-widest">Scroll to explore</span>
-        <ChevronDown className="w-5 h-5 text-white/40 animate-bounce" />
+        <span className="text-[10px] md:text-xs text-white/40 uppercase tracking-widest">Scroll to explore</span>
+        <ChevronDown className="w-4 h-4 md:w-5 md:h-5 text-white/40 animate-bounce" />
       </motion.a>
     </section>
   )
@@ -897,24 +942,24 @@ function LiveSignalsSection() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="glass-card p-6 mb-6"
+        className="glass-card p-4 md:p-6 mb-4 md:mb-6"
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-          <div className="flex items-center gap-3">
-            <Brain className="w-6 h-6 text-nc-eeg" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 md:mb-6 gap-3 md:gap-4">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Brain className="w-5 h-5 md:w-6 md:h-6 text-nc-eeg" />
             <div>
-              <h3 className="text-xl font-semibold">8-Channel EEG (Electroencephalogram)</h3>
-              <p className="text-sm text-white/50">Measures electrical activity of the brain via scalp electrodes</p>
+              <h3 className="text-base md:text-xl font-semibold">8-Channel EEG</h3>
+              <p className="text-xs md:text-sm text-white/50">Brain electrical activity</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             {/* State Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-white/40">State:</span>
+              <span className="text-[10px] md:text-xs text-white/40">State:</span>
               <select
                 value={eegState}
                 onChange={(e) => setEegState(e.target.value as PhysiologicalState)}
-                className="bg-black/30 border border-white/10 rounded px-2 py-1 text-sm text-white/80 cursor-pointer"
+                className="bg-black/30 border border-white/10 rounded px-2 py-1 text-xs md:text-sm text-white/80 cursor-pointer"
               >
                 <option value="alert">Alert</option>
                 <option value="relaxed">Relaxed</option>
@@ -922,30 +967,30 @@ function LiveSignalsSection() {
                 <option value="stressed">Stressed</option>
               </select>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm text-white/60 font-mono">250 Hz</span>
+              <span className="text-xs md:text-sm text-white/60 font-mono">250 Hz</span>
             </div>
           </div>
         </div>
 
         {/* State Description */}
-        <div className="mb-4 p-3 bg-nc-eeg/10 rounded-lg">
-          <p className="text-sm text-white/70">
+        <div className="mb-3 md:mb-4 p-2 md:p-3 bg-nc-eeg/10 rounded-lg">
+          <p className="text-xs md:text-sm text-white/70">
             <span className="font-medium text-nc-eeg">{EEG_STATE_PROFILES[eegState].label}:</span>{' '}
             {EEG_STATE_PROFILES[eegState].description}
           </p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
           {channels.map((channel) => (
-            <div key={channel} className="bg-black/30 rounded-lg p-3">
+            <div key={channel} className="bg-black/30 rounded-lg p-2 md:p-3">
               <div className="flex justify-between items-center mb-1">
-                <span className="font-mono text-sm text-nc-eeg">{channel}</span>
+                <span className="font-mono text-xs md:text-sm text-nc-eeg">{channel}</span>
               </div>
-              <div className="text-xs text-white/40 mb-2">{channelInfo[channel]}</div>
-              <div className="h-16">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className="text-[10px] md:text-xs text-white/40 mb-2 truncate">{channelInfo[channel]}</div>
+              <div className="h-12 md:h-16 min-h-[48px]">
+                <ResponsiveContainer width="100%" height="100%" minHeight={48}>
                   <LineChart data={eegData[channel] || []}>
                     <Line
                       type="monotone"
@@ -963,20 +1008,20 @@ function LiveSignalsSection() {
         </div>
 
         {/* EEG Bands Explanation */}
-        <div className="bg-black/20 rounded-lg p-4">
-          <h4 className="text-sm font-medium mb-3">Understanding EEG Frequency Bands</h4>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="bg-black/20 rounded-lg p-3 md:p-4">
+          <h4 className="text-xs md:text-sm font-medium mb-3">Understanding EEG Frequency Bands</h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
             {[
-              { band: 'Delta', range: '0.5-4 Hz', meaning: 'Deep sleep, healing', color: '#8b5cf6' },
-              { band: 'Theta', range: '4-8 Hz', meaning: 'Drowsiness, meditation', color: '#06b6d4' },
-              { band: 'Alpha', range: '8-13 Hz', meaning: 'Relaxed wakefulness', color: '#10b981' },
-              { band: 'Beta', range: '13-30 Hz', meaning: 'Active thinking, focus', color: '#f59e0b' },
-              { band: 'Gamma', range: '30-50 Hz', meaning: 'High cognition, binding', color: '#ef4444' },
+              { band: 'Delta', range: '0.5-4 Hz', meaning: 'Deep sleep', color: '#8b5cf6' },
+              { band: 'Theta', range: '4-8 Hz', meaning: 'Drowsiness', color: '#06b6d4' },
+              { band: 'Alpha', range: '8-13 Hz', meaning: 'Relaxed', color: '#10b981' },
+              { band: 'Beta', range: '13-30 Hz', meaning: 'Focus', color: '#f59e0b' },
+              { band: 'Gamma', range: '30-50 Hz', meaning: 'Cognition', color: '#ef4444' },
             ].map(b => (
               <div key={b.band} className="text-center p-2 rounded" style={{ backgroundColor: `${b.color}15` }}>
-                <div className="font-mono text-sm" style={{ color: b.color }}>{b.band}</div>
-                <div className="text-xs text-white/60">{b.range}</div>
-                <div className="text-xs text-white/40 mt-1">{b.meaning}</div>
+                <div className="font-mono text-xs md:text-sm" style={{ color: b.color }}>{b.band}</div>
+                <div className="text-[10px] md:text-xs text-white/60">{b.range}</div>
+                <div className="text-[10px] md:text-xs text-white/40 mt-1">{b.meaning}</div>
               </div>
             ))}
           </div>
@@ -988,32 +1033,30 @@ function LiveSignalsSection() {
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="glass-card p-6"
+        className="glass-card p-4 md:p-6"
       >
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Heart className="w-6 h-6 text-nc-ecg" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
+            <Heart className="w-5 h-5 md:w-6 md:h-6 text-nc-ecg" />
             <div>
-              <h3 className="text-xl font-semibold">3-Lead ECG (Electrocardiogram)</h3>
-              <p className="text-sm text-white/50">Measures electrical activity of the heart</p>
+              <h3 className="text-base md:text-xl font-semibold">3-Lead ECG</h3>
+              <p className="text-xs md:text-sm text-white/50">Heart electrical activity</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5 text-nc-ecg animate-pulse" />
-              <span className="font-mono text-2xl text-nc-ecg">{heartRate}</span>
-              <span className="text-sm text-white/40">BPM</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Heart className="w-4 h-4 md:w-5 md:h-5 text-nc-ecg animate-pulse" />
+            <span className="font-mono text-xl md:text-2xl text-nc-ecg">{heartRate}</span>
+            <span className="text-xs md:text-sm text-white/40">BPM</span>
           </div>
         </div>
 
-        <div className="bg-black/30 rounded-lg p-4 mb-6">
+        <div className="bg-black/30 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="font-mono text-sm text-nc-ecg">Lead II (Primary)</span>
-            <span className="text-xs text-white/40">Right Arm → Left Leg</span>
+            <span className="font-mono text-xs md:text-sm text-nc-ecg">Lead II</span>
+            <span className="text-[10px] md:text-xs text-white/40">RA → LL</span>
           </div>
-          <div className="h-40">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-32 md:h-40 min-h-[120px]">
+            <ResponsiveContainer width="100%" height="100%" minHeight={120}>
               <LineChart data={ecgData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
                 <Line
@@ -1030,24 +1073,24 @@ function LiveSignalsSection() {
         </div>
 
         {/* PQRST Explanation */}
-        <div className="bg-black/20 rounded-lg p-4">
-          <h4 className="text-sm font-medium mb-3">Understanding the PQRST Complex</h4>
-          <p className="text-sm text-white/50 mb-4">
-            Each heartbeat produces a characteristic waveform. Abnormalities in these waves indicate specific cardiac conditions.
+        <div className="bg-black/20 rounded-lg p-3 md:p-4">
+          <h4 className="text-xs md:text-sm font-medium mb-2 md:mb-3">Understanding the PQRST Complex</h4>
+          <p className="text-xs md:text-sm text-white/50 mb-3 md:mb-4">
+            Each heartbeat produces a characteristic waveform.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 md:gap-3">
             {[
-              { wave: 'P Wave', time: '80ms', meaning: 'Atrial depolarization (contraction)', clinical: 'Absent in AFib' },
-              { wave: 'PR Interval', time: '120-200ms', meaning: 'AV node conduction delay', clinical: 'Prolonged in heart block' },
-              { wave: 'QRS Complex', time: '80-120ms', meaning: 'Ventricular depolarization', clinical: 'Wide in bundle branch block' },
-              { wave: 'ST Segment', time: 'Variable', meaning: 'Plateau phase', clinical: 'Elevated in MI' },
-              { wave: 'T Wave', time: '160ms', meaning: 'Ventricular repolarization', clinical: 'Inverted in ischemia' },
+              { wave: 'P Wave', time: '80ms', meaning: 'Atrial contraction', clinical: 'Absent in AFib' },
+              { wave: 'PR', time: '120-200ms', meaning: 'AV delay', clinical: 'Heart block' },
+              { wave: 'QRS', time: '80-120ms', meaning: 'Ventricular', clinical: 'Bundle block' },
+              { wave: 'ST', time: 'Variable', meaning: 'Plateau', clinical: 'MI elevation' },
+              { wave: 'T Wave', time: '160ms', meaning: 'Repolarization', clinical: 'Ischemia' },
             ].map(w => (
-              <div key={w.wave} className="p-3 bg-nc-ecg/10 rounded">
-                <div className="font-mono text-sm text-nc-ecg">{w.wave}</div>
-                <div className="text-xs text-white/60">{w.time}</div>
-                <div className="text-xs text-white/40 mt-2">{w.meaning}</div>
-                <div className="text-xs text-nc-risk-medium mt-1">{w.clinical}</div>
+              <div key={w.wave} className="p-2 md:p-3 bg-nc-ecg/10 rounded">
+                <div className="font-mono text-xs md:text-sm text-nc-ecg">{w.wave}</div>
+                <div className="text-[10px] md:text-xs text-white/60">{w.time}</div>
+                <div className="text-[10px] md:text-xs text-white/40 mt-1 md:mt-2">{w.meaning}</div>
+                <div className="text-[10px] md:text-xs text-nc-risk-medium mt-1">{w.clinical}</div>
               </div>
             ))}
           </div>
