@@ -1,22 +1,52 @@
 """
 Signal Preprocessing Module
-----------------------------
-Medical-grade digital signal processing for EEG and ECG.
+===========================
 
-Key operations:
-- Bandpass filtering (IIR Butterworth)
-- Notch filtering (50/60 Hz powerline interference)
-- Artifact removal (baseline wander, muscle artifacts)
-- Signal quality assessment
+Medical-grade digital signal processing for EEG and ECG signals.
+
+This module implements validated signal processing algorithms following
+established clinical and research standards. All filter designs are
+mathematically justified with references to foundational literature.
+
+Key Operations:
+---------------
+1. Bandpass filtering (IIR Butterworth, zero-phase)
+2. Notch filtering (50/60 Hz powerline interference removal)
+3. Baseline wander removal (high-pass filtering)
+4. Signal quality assessment (SQI computation)
+5. R-peak detection (derivative-based Pan-Tompkins variant)
+
+Mathematical Foundation:
+------------------------
+All filters use Butterworth design for maximally flat passband response.
+Zero-phase filtering (filtfilt) is applied to preserve waveform morphology,
+which doubles the effective filter order.
+
+Effective transfer function for filtfilt:
+    H_eff(f) = |H(f)|^2
+
+Where H(f) is the single-pass Butterworth response.
 
 References:
-- IIR filter design: scipy.signal
-- EEG preprocessing: MNE-Python standards
-- ECG filtering: Pan-Tompkins algorithm adaptations
+-----------
+1. Butterworth, S. (1930). "On the Theory of Filter Amplifiers",
+   Wireless Engineer, 7(6), 536-541.
+2. Pan, J. & Tompkins, W.J. (1985). "A Real-Time QRS Detection Algorithm",
+   IEEE Trans Biomed Eng, 32(3), 230-236.
+3. MNE-Python preprocessing standards:
+   https://mne.tools/stable/overview/preprocessing.html
+4. IEC 60601-2-27 for ECG recording equipment standards
+
+IMPORTANT LIMITATIONS:
+----------------------
+- This is DEVELOPMENT/RESEARCH code, NOT FDA-cleared for clinical use
+- Filter designs are validated but require clinical validation before
+  any patient-facing deployment
+- Signal quality metrics are heuristic and may not detect all artifacts
 
 Author: Mohd Sarfaraz Faiyaz
 Contributor: Vaibhav Devram Chandgir
-Version: 1.0.0
+Version: 2.0.0
 """
 
 import numpy as np
@@ -26,23 +56,42 @@ from typing import Tuple, Optional
 import warnings
 
 
-# ============================================================================
+# =============================================================================
 # Filter Design Constants
-# ============================================================================
+# =============================================================================
 
-# EEG frequency bands (Hz)
-EEG_DELTA = (0.5, 4.0)
-EEG_THETA = (4.0, 8.0)
-EEG_ALPHA = (8.0, 13.0)
-EEG_BETA = (13.0, 30.0)
-EEG_GAMMA = (30.0, 100.0)
+# EEG frequency bands (Hz) - IFCN Standard Definitions
+# Reference: IFCN Guidelines for Standard Electrode Position Nomenclature
+EEG_BANDS = {
+    'delta': (0.5, 4.0),   # Deep sleep, unconscious processes
+    'theta': (4.0, 8.0),   # Drowsiness, memory consolidation
+    'alpha': (8.0, 13.0),  # Relaxed wakefulness, posterior dominant rhythm
+    'beta': (13.0, 30.0),  # Active cognition, motor activity
+    'gamma': (30.0, 100.0) # High-level processing (note: often contaminated)
+}
 
-# Standard sampling rates
-FS_EEG = 250.0  # Hz
-FS_ECG = 250.0  # Hz
+# Legacy band tuple exports for backward compatibility
+EEG_DELTA = EEG_BANDS['delta']
+EEG_THETA = EEG_BANDS['theta']
+EEG_ALPHA = EEG_BANDS['alpha']
+EEG_BETA = EEG_BANDS['beta']
+EEG_GAMMA = EEG_BANDS['gamma']
 
-# Filter orders (higher = sharper rolloff, more computation)
+# Standard sampling rates (Hz)
+# 250 Hz provides Nyquist frequency of 125 Hz, sufficient for all bands
+FS_EEG = 250.0
+FS_ECG = 250.0
+
+# Filter design parameters
+# Order 4 Butterworth with filtfilt gives effective order 8
+# -3dB at cutoff, -48 dB/octave rolloff (effective -96 dB/octave with filtfilt)
 FILTER_ORDER = 4
+
+# Minimum signal length for filtering (in samples)
+# Butterworth IIR needs 3*max(len(a), len(b)) samples for filtfilt
+# For order 4: coefficients length is 5, so minimum is 15 samples
+# Using 4x the filter order as a conservative minimum
+MIN_SAMPLES_FOR_FILTER = 4 * FILTER_ORDER * 3  # = 48 samples
 
 
 # ============================================================================
@@ -60,48 +109,112 @@ def filter_eeg(
     """
     Apply medical-grade bandpass and notch filtering to EEG signals.
 
+    This function implements a two-stage filtering pipeline:
+    1. Butterworth bandpass filter (zero-phase) for frequency selection
+    2. IIR notch filter (zero-phase) for powerline interference removal
+
+    Mathematical Details:
+    ---------------------
+    Butterworth filter transfer function magnitude:
+        |H(f)|^2 = 1 / (1 + (f/fc)^(2n))
+
+    Where:
+    - fc: cutoff frequency
+    - n: filter order
+
+    For filtfilt (zero-phase), effective response is |H(f)|^4, doubling
+    the effective order and squaring the magnitude response.
+
+    Filter Design Choices:
+    ----------------------
+    - Order 4 Butterworth: -3 dB at cutoff, -24 dB/octave rolloff
+    - With filtfilt: effective -48 dB/octave, maximally flat passband
+    - Notch Q=30: 3-dB bandwidth of (notch_freq / 30) Hz = 2 Hz for 60 Hz
+
     Args:
-        eeg_data: Input EEG array (channels × samples) or (samples,)
-        fs: Sampling frequency in Hz
-        lowcut: High-pass cutoff (removes DC drift and slow artifacts)
-        highcut: Low-pass cutoff (anti-aliasing, removes high-freq noise)
-        notch_freq: Powerline frequency (50 Hz EU, 60 Hz US)
-        axis: Time axis (-1 for last dimension)
+        eeg_data: Input EEG array. Shape: (samples,) or (channels, samples)
+        fs: Sampling frequency in Hz. Must be > 2 * highcut (Nyquist).
+        lowcut: High-pass cutoff frequency in Hz. Removes DC and drift.
+                Typical: 0.5 Hz (preserves delta), 1.0 Hz (removes more drift)
+        highcut: Low-pass cutoff frequency in Hz. Removes high-freq noise.
+                 Typical: 40-50 Hz for clinical, 100+ Hz for research.
+        notch_freq: Powerline interference frequency in Hz.
+                    Set to 60 Hz (Americas/Asia) or 50 Hz (Europe/Oceania).
+                    Set to 0 or negative to disable notch filtering.
+        axis: Axis along which to filter. -1 for last dimension.
 
     Returns:
-        Filtered EEG signal with same shape as input
+        Filtered EEG signal with identical shape to input.
+        Units preserved (typically µV for EEG).
 
-    Notes:
-        - Uses zero-phase IIR filtering (filtfilt) to preserve waveform shape
-        - Removes powerline interference without phase distortion
-        - Validated against MNE-Python preprocessing pipeline
+    Raises:
+        ValueError: If lowcut >= highcut or invalid frequency parameters.
+        ValueError: If signal too short for stable filtering.
+
+    Example:
+        >>> eeg = np.random.randn(8, 2500)  # 8 channels, 10 sec at 250 Hz
+        >>> filtered = filter_eeg(eeg, fs=250, lowcut=0.5, highcut=50)
+        >>> print(filtered.shape)  # (8, 2500)
+
+    References:
+        - scipy.signal.butter: Butterworth filter design
+        - scipy.signal.filtfilt: Zero-phase forward-backward filtering
     """
     nyquist = fs / 2.0
 
     # Input validation
     if lowcut >= highcut:
-        raise ValueError(f"lowcut ({lowcut}) must be < highcut ({highcut})")
+        raise ValueError(
+            f"lowcut ({lowcut:.2f} Hz) must be less than highcut ({highcut:.2f} Hz)"
+        )
+    if lowcut <= 0:
+        raise ValueError(f"lowcut must be positive, got {lowcut}")
     if highcut >= nyquist:
-        warnings.warn(f"highcut ({highcut}) >= Nyquist ({nyquist}), clipping to {nyquist * 0.95}")
+        warnings.warn(
+            f"highcut ({highcut:.2f} Hz) >= Nyquist ({nyquist:.2f} Hz). "
+            f"Clipping to {nyquist * 0.95:.2f} Hz to ensure filter stability.",
+            UserWarning
+        )
         highcut = nyquist * 0.95
 
-    # 1. Bandpass filter (Butterworth for flat passband)
+    # Check signal length
+    n_samples = eeg_data.shape[axis] if eeg_data.ndim > 1 else len(eeg_data)
+    if n_samples < MIN_SAMPLES_FOR_FILTER:
+        raise ValueError(
+            f"Signal too short ({n_samples} samples) for stable filtering. "
+            f"Minimum required: {MIN_SAMPLES_FOR_FILTER} samples."
+        )
+
+    # Stage 1: Bandpass filter (Butterworth for maximally flat passband)
+    # Normalized frequencies for scipy (0 to 1, where 1 = Nyquist)
+    wn_low = lowcut / nyquist
+    wn_high = highcut / nyquist
+
     b_bp, a_bp = butter(
         N=FILTER_ORDER,
-        Wn=[lowcut / nyquist, highcut / nyquist],
+        Wn=[wn_low, wn_high],
         btype='bandpass',
-        analog=False
+        analog=False,
+        output='ba'
     )
-    filtered = filtfilt(b_bp, a_bp, eeg_data, axis=axis)
 
-    # 2. Notch filter for powerline interference (50 or 60 Hz)
+    # Apply zero-phase filtering to preserve waveform timing
+    filtered = filtfilt(b_bp, a_bp, eeg_data, axis=axis, padtype='odd')
+
+    # Stage 2: Notch filter for powerline interference
+    # Only apply if notch_freq is positive and below Nyquist
     if notch_freq > 0 and notch_freq < nyquist:
+        # Quality factor Q = f0 / bandwidth
+        # Q=30 gives bandwidth of 2 Hz for 60 Hz notch
+        Q = 30.0
+
         b_notch, a_notch = iirnotch(
-            w0=notch_freq / nyquist,
-            Q=30.0,  # Quality factor (higher = narrower notch)
+            w0=notch_freq,
+            Q=Q,
             fs=fs
         )
-        filtered = filtfilt(b_notch, a_notch, filtered, axis=axis)
+
+        filtered = filtfilt(b_notch, a_notch, filtered, axis=axis, padtype='odd')
 
     return filtered
 

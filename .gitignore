@@ -109,3 +109,17 @@ Desktop.ini
 *.pem
 credentials.json
 secrets.yaml
+
+# AI/IDE Tools (do not track)
+.claude/
+.cursor/
+.ai/
+
+# Node.js / Frontend
+node_modules/
+web/node_modules/
+web/out/
+web/.next/
+.next/
+*.tsbuildinfo
+next-env.d.ts

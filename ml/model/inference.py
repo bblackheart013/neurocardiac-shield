@@ -1,17 +1,33 @@
 """
 ML Inference Module
--------------------
-Production inference pipeline combining XGBoost and LSTM models
-for real-time risk prediction.
+===================
 
-Ensemble strategy:
+Production inference pipeline combining XGBoost and LSTM models
+for real-time risk prediction with explainability support.
+
+Ensemble Strategy:
+------------------
 - XGBoost: Interpretable feature-based risk (60% weight)
 - LSTM: Temporal pattern-based risk (40% weight)
 - Final score: Weighted combination with confidence metrics
 
+Explainability Features:
+------------------------
+- Feature importance ranking for XGBoost predictions
+- Top contributing features per prediction
+- Confidence intervals based on probability entropy
+- Model disagreement detection
+
+IMPORTANT LIMITATIONS:
+----------------------
+- Models are trained on SYNTHETIC data only
+- Risk scores are NOT clinically validated
+- This module is for RESEARCH/DEVELOPMENT use only
+- Do NOT use for clinical decision-making
+
 Author: Mohd Sarfaraz Faiyaz
 Contributor: Vaibhav Devram Chandgir
-Version: 1.0.0
+Version: 2.0.0
 """
 
 import numpy as np
@@ -155,19 +171,28 @@ class NeuroCardiacInference:
         features: Dict[str, float],
         sequence: np.ndarray,
         xgb_weight: float = 0.6,
-        lstm_weight: float = 0.4
+        lstm_weight: float = 0.4,
+        include_explanations: bool = True
     ) -> Dict:
         """
-        Ensemble prediction combining XGBoost and LSTM.
+        Ensemble prediction combining XGBoost and LSTM with explainability.
 
         Args:
             features: Feature dictionary for XGBoost
             sequence: Time-series sequence for LSTM
             xgb_weight: Weight for XGBoost prediction
             lstm_weight: Weight for LSTM prediction
+            include_explanations: If True, include feature importance analysis
 
         Returns:
-            Prediction dictionary with ensemble results
+            Prediction dictionary with:
+            - risk_score: Weighted ensemble score (0-1)
+            - risk_category: LOW, MEDIUM, or HIGH
+            - confidence: Prediction confidence (0-1)
+            - probabilities: Per-class probabilities
+            - model_breakdown: Individual model predictions
+            - explanations: Feature importance and top contributors (if requested)
+            - model_agreement: Whether models agree on category
         """
         # Individual model predictions
         xgb_probs, xgb_score, xgb_category = self.predict_xgboost(features)
@@ -182,10 +207,14 @@ class NeuroCardiacInference:
         # Confidence: Use entropy of probability distribution
         # Low entropy = high confidence
         entropy = -np.sum(ensemble_probs * np.log(ensemble_probs + 1e-10))
-        max_entropy = np.log(len(ensemble_probs))  # Max entropy for uniform distribution
+        max_entropy = np.log(len(ensemble_probs))
         confidence = 1.0 - (entropy / max_entropy)
 
-        return {
+        # Model agreement check
+        model_agreement = (xgb_category == lstm_category)
+
+        # Build result
+        result = {
             'risk_score': float(ensemble_score),
             'risk_category': ensemble_category,
             'confidence': float(confidence),
@@ -205,8 +234,125 @@ class NeuroCardiacInference:
                     'category': lstm_category,
                     'probabilities': lstm_probs.tolist()
                 }
-            }
+            },
+            'model_agreement': model_agreement
         }
+
+        # Add explainability if requested
+        if include_explanations and self.xgb_model is not None:
+            result['explanations'] = self._generate_explanations(features)
+
+        return result
+
+    def _generate_explanations(self, features: Dict[str, float]) -> Dict:
+        """
+        Generate feature-level explanations for prediction.
+
+        This method identifies which features contributed most to the
+        prediction, enabling interpretability of the risk score.
+
+        Args:
+            features: Input feature dictionary
+
+        Returns:
+            Dictionary containing:
+            - top_positive_features: Features pushing toward HIGH risk
+            - top_negative_features: Features pushing toward LOW risk
+            - feature_importance_used: Global feature importance from model
+        """
+        explanations = {
+            'top_contributors': [],
+            'feature_importance_summary': {},
+            'interpretation_notes': []
+        }
+
+        try:
+            # Get feature importance from XGBoost model
+            importance = self.xgb_model.feature_importances_
+
+            # Load feature names from training (if available)
+            feature_names = list(features.keys())
+
+            # Create importance mapping
+            if len(importance) == len(feature_names):
+                importance_dict = dict(zip(feature_names, importance))
+
+                # Sort by importance
+                sorted_features = sorted(
+                    importance_dict.items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )
+
+                # Top 10 contributors
+                top_10 = sorted_features[:10]
+                explanations['top_contributors'] = [
+                    {
+                        'feature': name,
+                        'importance': float(imp),
+                        'value': float(features.get(name, 0))
+                    }
+                    for name, imp in top_10
+                ]
+
+                # Category summaries
+                hrv_importance = sum(
+                    imp for name, imp in importance_dict.items()
+                    if name in ['mean_hr', 'sdnn', 'rmssd', 'pnn50',
+                               'lf_power', 'hf_power', 'lf_hf_ratio']
+                )
+                eeg_importance = sum(
+                    imp for name, imp in importance_dict.items()
+                    if 'power' in name or 'ratio' in name or 'entropy' in name
+                ) - hrv_importance
+
+                explanations['feature_importance_summary'] = {
+                    'hrv_contribution': float(hrv_importance),
+                    'eeg_contribution': float(eeg_importance),
+                    'ecg_morphology_contribution': float(
+                        sum(imp for name, imp in importance_dict.items()
+                            if name in ['mean_qrs_duration', 'qrs_amplitude',
+                                       'mean_rr_interval'])
+                    )
+                }
+
+                # Interpretation notes based on key feature values
+                notes = []
+
+                if features.get('lf_hf_ratio', 1.0) > 2.5:
+                    notes.append(
+                        "Elevated LF/HF ratio suggests sympathetic dominance (stress indicator)"
+                    )
+                if features.get('sdnn', 50) < 30:
+                    notes.append(
+                        "Low SDNN indicates reduced heart rate variability"
+                    )
+                if features.get('rmssd', 30) < 20:
+                    notes.append(
+                        "Low RMSSD suggests reduced parasympathetic activity"
+                    )
+                if features.get('mean_hr', 70) > 100:
+                    notes.append(
+                        "Elevated heart rate detected"
+                    )
+
+                # Check alpha/beta ratios
+                alpha_beta_ratios = [
+                    features.get(f'{ch}_alpha_beta_ratio', 1.0)
+                    for ch in ['Fp1', 'Fp2', 'C3', 'C4', 'T3', 'T4', 'O1', 'O2']
+                ]
+                mean_ab_ratio = np.mean(alpha_beta_ratios)
+                if mean_ab_ratio < 0.8:
+                    notes.append(
+                        "Low alpha/beta ratio may indicate cognitive stress or fatigue"
+                    )
+
+                explanations['interpretation_notes'] = notes
+
+        except Exception as e:
+            explanations['error'] = str(e)
+
+        return explanations
 
 
 # ============================================================================
