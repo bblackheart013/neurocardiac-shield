@@ -45,7 +45,7 @@
 ---
 
 <p align="center">
-  <img src="<img width="1313" height="1289" alt="image" src="https://github.com/user-attachments/assets/5b72122e-2b6b-4e73-aabe-bce189c00f36" />
+  <img width="1313" height="1289" alt="image" src="https://github.com/user-attachments/assets/b3c5e2b7-9bbb-4ace-ab5a-91c26dbdcb26" />
 " alt="NeuroCardiac Shield Dashboard" width="100%"/>
 </p>
 
