@@ -20,6 +20,11 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Account for fixed navbar when scrolling to sections */
+section[id] {
+  scroll-margin-top: 80px;
+}
+
 body {
   background: var(--nc-bg);
   color: #f0f0f5;
